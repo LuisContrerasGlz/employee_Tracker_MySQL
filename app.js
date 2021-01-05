@@ -1,10 +1,12 @@
 const inquirer = require("inquirer");
-const Manager = require("./lib/Manager");
-const Engineer = require("./lib/Engineer");
-const Intern = require("./lib/Intern");
+const Option = require("./lib/Option");
+const Employee = require("./lib/Employee");
+const Department = require("./lib/Department");
+const Role = require("./lib/Role");
+
 
 const path = require("path");
-const fs = require("fs");
+//const fs = require("fs");
 
 var mysql = require("mysql");
 
@@ -15,12 +17,14 @@ var conn=mysql.createConnection({
     password: ""
 })
 
-
-//const OUTPUT_DIR = path.resolve(__dirname, "output");
-//const outputPath = path.join(OUTPUT_DIR, "team.html");
-
-//const render = require("./lib/htmlRenderer");
-
+conn.connect(function(error){
+    if (error){
+        console.log("coneccion con error", error);
+        //throw error;
+    }else{
+        console.log("coneccion existosa");
+    }
+})
 
 departments=[];
 roles=[];
@@ -29,145 +33,277 @@ employees =[];
 
 function thisisend(){
     console.log("termine");
-    //console.log(employees);
-    //let t=render(employees);
-    //fs.writeFile(outputPath,t,{encoding:'utf8'},function(error){
-    //    if(error){
-    //        console.log('error: 4{error}');
-    //    }else{
-    //        console.log('ready');
-    //    }
-    //});
-
-
-
 }
 
 
-function all_departments(){
-    conn.connect(function(error){
-        if (error){
-            console.log("coneccion con error", error);
-            //throw error;
-        }else{
-            console.log("coneccion existosa");
-        }
-    })
+function all_departaments(){
+    console.log("All DEpartments");
+    console.log("Name - Id");
     conn.query("select * from departament", function(error, results, fields){
         if (error){
             console.log("error de consulta ", error);
-            //throw error;
         }else{
             results.forEach(result => {
-                console.log(result);
+                console.log(result.name,"-",result.id);
             });
         }
-
     } )
-    conn.end;
-    view();
-}
-
-
-function new_department(){
-    console.log("your select is an Engineer");
     inquirer.prompt([
         {
             type: "input",
-            name: "mameEngineer", 
-            message: "What is the Engineer's Name? "
-        },
-        {
-            type: "input",
-            name: "idEngineer", 
-            message: "What is the Engineer's ID? "
-        },
-        {
-            type: "input",
-            name: "emailEngineer", 
-            message: "What is your Engineer' email? "
-        },
-        {
-            type: "input",
-            name: "gitEngineer", 
-            message: "What is your Engineer's github username? "
-        },
-        {
-            type: "list",
-            name: "optMember", 
-            message: "Wich type of team member wold you like to add? ",
-            choices: ["Engineer","Intern","I don´t want to add any more team members"]
+            name: "cont", 
+            message: "<enter> to Continue "
         }
     ])
-    .then(engineers => {
-        console.log('engineers');
-        let e = new Engineer.Engineer(engineers.mameEngineer,engineers.idEngineer, engineers.emailEngineer, engineers.gitEngineer);
-        employees.push(e);
+    .then(conti => {
+        view();
+    })
+}
 
-        if (engineers.optMember=="Engineer"){
-            new_engineer();
+function all_roles(){
+    console.log("All Roles");
+    console.log("Title - Salary  -  Department");
+    conn.query("SELECT a.title as title, a.salary as salary, a.department_id, b.name as dept from role a, departament b where b.id=a.department_id"
+        , function(error, results, fields){
+        if (error){
+            console.log("error de consulta ", error);
         }else{
-            if (engineers.optMember=="Intern"){
-                new_intern();
-            }else{
-                thisisend();
-            }
-        
+            results.forEach(result => {
+                console.log(result.title,"-",result.salary,"-",result.dept);
+            });
         }
-
+    } )
+    inquirer.prompt([
+        {
+            type: "input",
+            name: "cont", 
+            message: "<enter> to Continue "
+        }
+    ])
+    .then(conti => {
+        view();
     })
 }
 
 
-function new_employee(){
-    console.log("New Employee");
+function all_employees(){
+    console.log("All employees");   
+    conn.query("select a.first_name as fn, a.last_name as ln, b.title as role, c.name as department, concat(d.first_name,' ',d.last_name) as manager "+
+               " from employee a, role b, departament c, employee d where b.id=a.role_id and c.id=b.department_id and d.id=a.manager_id"
+        , function(error, results, fields){
+        if (error){
+            console.log("error de consulta ", error);
+        }else{
+            console.log("First Name - Last Name  -  Role  -  Department  - Manager");
+            results.forEach(result => {
+                console.log(result.fn,"-",result.ln,"-",result.role,"-",result.department,"-",result.manager);
+            });
+        }
+    } )
     inquirer.prompt([
         {
             type: "input",
-            name: "fnEemployee", 
-            message: "What is the Employee's First Name? "
+            name: "cont", 
+            message: "<enter> to Continue "
+        }
+    ])
+    .then(conti => {
+        view();
+    })
+}
+
+function employee_for_department(){
+    console.log("Employee for department");
+    opts=[];
+    conn.query("select * from departament", function(error, results, fields){
+        if (error){
+            console.log("error de consulta ", error);
+        }else{
+            results.forEach(result => {
+                //let d = new Department.Department(result.id,result.name);
+                let d = result.name
+                opts.push(d);
+            });
+        }
+    } )
+    inquirer.prompt([
+        {
+            type: "input",
+            name: "cont", 
+            message: "<enter> to Continue "
+        },
+        {
+            type: "list",
+            name: "department", 
+            message: "Department ",
+            choices: opts
+        } 
+    ])
+    .then(opt3 => {
+        conn.query("select a.first_name as fn, a.last_name as ln, b.title as role, c.name as department, concat(d.first_name,' ',d.last_name) as manager"+
+                " from employee a, role b, departament c, employee d "+
+                " where b.id=a.role_id and c.id=b.department_id and d.id=a.manager_id and c.name='"+opt3.department+"'",
+                    function(error, results){
+            if (error){
+                console.log("error de consulta ", error);
+            }else {
+                console.log("First Name - Last Name  -  Role  -  Department  - Manager");
+                results.forEach(result => {
+                    console.log(result.fn,"-",result.ln,"-",result.role,"-",result.department,"-",result.manager);
+                });
+            }
+        } )
+        view();
+    })    
+
+
+
+}
+
+function employee_for_manager(){
+    console.log("Employee for department");
+    opts=[];
+    conn.query("select * from employee where role_id=1", function(error, results, fields){
+        if (error){
+            console.log("error de consulta ", error);
+        }else{
+            results.forEach(result => {
+                //let d = new Department.Department(result.id,result.name);
+                let d = result.first_name+" "+result.last_name;
+                opts.push(d);
+            });
+        }
+    } )
+    inquirer.prompt([
+        {
+            type: "input",
+            name: "cont", 
+            message: "<enter> to Continue "
+        },
+        {
+            type: "list",
+            name: "manager", 
+            message: "Manager ",
+            choices: opts
+        } 
+    ])
+    .then(opt3 => {
+        conn.query("select a.first_name as fn, a.last_name as ln, b.title as role, c.name as department, concat(d.first_name,' ',d.last_name) as manager"+
+                   " from employee a, role b, departament c, employee d"+ 
+                   " where b.id=a.role_id and c.id=b.department_id and d.id=a.manager_id and concat(d.first_name,' ',d.last_name)='"+opt3.manager+"'"
+                   ,function(error, results){
+            if (error){
+                console.log("error de consulta ", error);
+            }else {
+                console.log("First Name - Last Name  -  Role  -  Department  - Manager");
+                results.forEach(result => {
+                    console.log(result.fn,"-",result.ln,"-",result.role,"-",result.department,"-",result.manager);
+                });
+            }
+        } )
+        view();
+    })    
+}
+
+function new_employee(){
+    console.log("New Employee");
+    opts=[];
+    conn.query("select * from role", function(error, results, fields){
+        if (error){
+            console.log("error de consulta ", error);
+        }else{
+            results.forEach(result => {
+                let d = result.title
+                opts.push(d);
+            });
+        }
+    } );
+    mangs=[];
+    let d = {
+               id: 0,
+               name: "none"
+    }
+    mangs.push(d);
+    conn.query("select * from employee where role_id=1", function(error, results, fields){
+        if (error){
+            console.log("error de consulta ", error);
+        }else{
+            results.forEach(result => {
+                let d = {
+                           id: result.id,
+                           name: result.first_name+" "+result.last_name
+                }
+                mangs.push(d);
+            });
+        }
+    } );
+    inquirer.prompt([
+        {
+            type: "input",
+            name: "fnEmployee", 
+            message: "What is the First Name? "
         },
         {
             type: "input",
             name: "lnEmployee", 
-            message: "What is the Employee's Last Name? "
-        },
-        {
-            type: "input",
-            name: "roleEmpleyee", 
-            message: "What is the Employee's Role? "
-        },
-        {
-            type: "input",
-            name: "managerEmpleyee", 
-            message: "What is the Employee's Manager? "
+            message: "What is the last Name? "
         },
         {
             type: "list",
-            name: "opt", 
-            message: "What do you want to do? ",
-            choices: ["Add",
-                      "Exit"
-                      ]
-        }
+            name: "managerEmployee", 
+            message: "What is the Maneager? ",
+            choices: mangs
+        },
+        {
+            type: "list",
+            name: "roleEmployee", 
+            message: "Role ",
+            choices: opts
+        } 
     ])
     .then(opt3 => {
-        //console.log('interns');
-        //let e = new Intern.Intern(interns.mameIntern,interns.idIntern, interns.emailIntern, interns.schoolIntern);
-        //employees.push(e);
-        if (opt3.opt=="Add"){
-            new_employee();
+        if (opt3.managerEmployee!="none"){
+            //console.log("select id from employee where first_name+' '+last_name='"+opt3.managerEmployee+"'");
+            regs = mangs.filter(reg=> reg.name==opt3.managerEmployee);
+            console.log(regs[0].id)
+            conn.query("insert into employee (first_name,last_name,manager_id,role_id) values ('"+opt3.fnEmployee+"','"+opt3.lnEmployee+"',"+
+                       regs[0].id+",(select id from role where title='"+opt3.roleEmployee+"'))",
+                        function(error, results2){
+                    if (error){
+                        console.log("error de consulta 1 ", error);
+                    }
+            } )
+            add();
         }else{
+            conn.query("insert into employee (first_name,last_name,manager_id,role_id) values ('"+opt3.fnEmployee+"','"+opt3.lnEmployee+"',1,"+
+                        "(select id from role where title='"+opt3.roleEmployee+"'))",
+                        function(error, results){
+                if (error){
+                    console.log("error de consulta 2 ", error);
+                }
+            } )
             add();
         }
+
     })
+    
 }
-
-
 
 
 function new_role(){
     console.log("New Role");
+    opts=[];
+    conn.query("select * from departament", function(error, results, fields){
+        if (error){
+            console.log("error de consulta ", error);
+        }else{
+            results.forEach(result => {
+                //let d = new Department.Department(result.id,result.name);
+                let d = result.name
+                opts.push(d);
+            });
+        }
+    } )
     inquirer.prompt([
         {
             type: "input",
@@ -180,28 +316,22 @@ function new_role(){
             message: "What is the Role's Salary? "
         },
         {
-            type: "input",
-            name: "dapartmentRole", 
-            message: "What is the Role's Department? "
-        },
-        {
             type: "list",
-            name: "opt", 
-            message: "What do you want to do? ",
-            choices: ["Add",
-                      "Exit"
-                      ]
-        }
+            name: "departmentRole", 
+            message: "Department ",
+            choices: opts
+        } 
     ])
     .then(opt3 => {
-        //console.log('interns');
-        //let e = new Intern.Intern(interns.mameIntern,interns.idIntern, interns.emailIntern, interns.schoolIntern);
-        //employees.push(e);
-        if (opt3.opt=="Add"){
-            new_role();
-        }else{
-            add();
-        }
+        conn.query("insert into role (title,salary, department_id) values ('"+opt3.titleRole+"',"
+                    +opt3.SalaryRole+",(select id from departament where name='"+opt3.departmentRole+"'))",
+                    function(error, results){
+            if (error){
+                console.log("error de consulta ", error);
+                //throw error;
+            }
+        } )
+        add();
     })
 }
 
@@ -215,40 +345,17 @@ function new_department(){
             type: "input",
             name: "mameDepartment", 
             message: "What is the Department's Name? "
-        },
-        {
-            type: "list",
-            name: "opt", 
-            message: "What do you want to do? ",
-            choices: ["Add",
-                      "Exit"
-                      ]
         }
     ])
     .then(opt3 => {
-        conn.connect(function(error){
-            if (error){
-                console.log("coneccion con error", error);
-                //throw error;
-            }else{
-                console.log("coneccion existosa");
-            }
-        })
         conn.query("insert into departament (name) values ('"+opt3.mameDepartment+"')", function(error, results){
             if (error){
                 console.log("error de consulta ", error);
                 //throw error;
-            }else{
-                console.log("se inserto el registro exitosamente ");
             }
     
         } )
-        conn.end;
-        if (opt3.opt=="Add"){
-            new_department();
-        }else{
-            add();
-        }
+        add();
     })
 }
 
@@ -303,12 +410,24 @@ function view(){
     ])
     .then(opt2 => {
         if (opt2.opt=="Departments"){
-            all_departments();
+            all_departaments();
         }else{
             if (opt2.opt=="Roles"){
-                view();
+                all_roles();
             }else{
-                begin();
+                if (opt2.opt=="All Employees"){
+                    all_employees();
+                }else{
+                    if (opt2.opt=="Employees for Department"){
+                        employee_for_department();
+                    }else{
+                        if (opt2.opt=="Employess for Manager"){
+                            employee_for_manager();
+                        }else{
+                            begin();
+                        }
+                    }
+                }
             }
         
         }
