@@ -2,7 +2,7 @@ MySQL Homework: Employee Tracker.
 
 This application connects MySQL with JavaScript for an Employee Tracker system.
 
-Application uses the following structure for the DB:
+Application uses the following structure for the DB(Database sql file on this repo for use):
 
 ![Screenshot Index](./schema.png)
 
