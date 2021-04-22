@@ -1,4 +1,4 @@
-MySQL Homework: Employee Tracker.
+# MySQL Homework: Employee Tracker.
 
 This application connects MySQL with JavaScript for an Employee Tracker system.
 
@@ -26,7 +26,7 @@ last_name - VARCHAR(30) to hold employee last name
 role_id - INT to hold reference to role employee has
 manager_id - INT to hold reference to another employee that manages the employee being Created. This field may be null if the employee has no manager.
 
-Aplication works for the following scenarios:
+## Aplication works for the following scenarios:
 
 - Add departments, roles, employees
 
@@ -34,11 +34,11 @@ Aplication works for the following scenarios:
 
 - Update employee roles
 
-User Story:
+## User Story:
 
 As a business owner
 I want to be able to view and manage the departments, roles, and employees in my company
 So that I can organize and plan my business
 
-Video Demo:
+## Video Demo:
 https://www.youtube.com/watch?v=wKsBE6n4nK8
